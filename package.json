@@ -1,5 +1,6 @@
 {
   "name": "videovad",
+  "version": "1.0.1",
   "description": "Mark-ups H.264 video with chapters based on Voice detection (Mozilla lib)",
   "author": {
     "email": "post.ilya@gmail.com",
@@ -25,7 +26,6 @@
   "man": "README.md",
   "private": true,
   "license": "MIT",
-  "version": "1.0.0",
   "dependencies": {
     "any-shell-escape": "0.1.1",
     "ffmpeg-static": "4.2.7",
@@ -38,10 +38,9 @@
     "wav-file-info": "0.0.10",
     "youtube-dl": "3.0.2"
   },
-
   "scripts": {
     "build:docker": "docker build --build-arg BASE_CONTAINER=centos:7.8.2003 -t videovad:latest .",
-    "start:docker": "docker start vieovad:latest -v /var/opt/videovad/data:/home/node/data",
-    "start": "node ./src/index.js ./data/input.txt ./data/output"
+    "start:docker": "docker start vieovad:latest",
+    "start": "node ./src/index.js"
   }
 }

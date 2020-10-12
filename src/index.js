@@ -65,9 +65,14 @@ const vadDataToTsv = (vadData, fields = VAD_FILE_HEADER) => [
   v => `${v.join('\t')}\n`
 ).join('');
 
+/**
+ * Get video duration in seconds
+ * @param mediaPath
+ * @returns {Promise<number>}
+ */
 const getDurationSec = async (mediaPath) => new Promise(
   (resolve, reject) => {
-    process.stderr.write(`${mediaPath} -[duration]-> `)
+    process.stderr.write(`${path.relative(process.cwd(), mediaPath)} -[duration]-> `)
     const ffprobeCmd = shellEscape([
       path.relative(process.cwd(), ffprobePath),
       '-v',
@@ -86,7 +91,7 @@ const getDurationSec = async (mediaPath) => new Promise(
         process.stderr.write(` - ERROR: ${err.message}\n${err.stack}\n\n`)
         reject(err)
       } else {
-        resolve(parseFloat(stdout))
+        resolve(parseFloat(stdout) || 0)
       }
     })
   }
@@ -144,7 +149,6 @@ const videoToAudio = async (
   audioChannels = DEFAULT_NUMBER_OF_CHANNELS,
 ) => {
   const duration = Math.floor(await getDurationSec(videoPath)); // FIXME: avoid sub-second tailcut
-  // const slices = for ( )
   return cpMap(
     [
       {
@@ -164,7 +168,7 @@ const videoToAudio = async (
       const endSec = limitSec ? ((offsetSec || 0) + (limitSec || 0)) : '';
 
       const audioPath = videoPath.replace(/\.[^.\/]+$/ui, `${startSec ? `-${startSec}` : ''}${endSec ? `-${endSec}` : ''}${extensionSuffix}`);
-      process.stderr.write(`${videoPath} -[audio:${audioChannels}]-> ${path.relative(process.cwd(), audioPath)}`)
+      process.stderr.write(`${path.relative(process.cwd(), videoPath)} -[audio:${audioChannels}]-> ${path.relative(process.cwd(), audioPath)}`)
       if (fs.existsSync(audioPath)) {
         process.stderr.write(' - Target already exists - Done\n')
         return audioPath
@@ -192,7 +196,6 @@ const videoToAudio = async (
         process.stderr.write(` - $ ${ffmpegCmd}`);
       }
       return new Promise((resolve, reject) => {
-
         exec(
           ffmpegCmd,
           (err, stdout, stderr) => {
@@ -215,7 +218,6 @@ const downloadYoutube = (
   outputDir = DEFAULT_OUTPUT_DIR
 ) => new Promise(
   (resolve, reject) => {
-
     const video = youtubeDownload(
       youtubeUrl,
       // Optional arguments passed to youtube-dl.
@@ -244,7 +246,8 @@ const downloadYoutube = (
       resolve(outputPath);
     }
   }
-)
+);
+
 const vadFromStream = (
   inputStream,
   sampleRate,
@@ -270,7 +273,6 @@ const vadFromStream = (
     let started = null;
     const timeScale = 1 / 1000;
     inputStream.pipe(vadStream).on("data", (vadRec) => {
-      // console.error('vadRec.speech', vadRec.speech)
       if (vadRec.speech) {
         if (vadRec.speech.start) {
           started = vadRec.speech.startTime
@@ -313,7 +315,15 @@ const processFile = async (
   numberOfChannels = DEFAULT_NUMBER_OF_CHANNELS,
   targetTimeSec = DEFAULT_TARGET_TIME_SEC,
 ) => {
-  const videoPath = await downloadYoutube(inputUrlOrPath, outputDir);
+  let videoPath;
+  if (inputUrlOrPath.match(/youtube\.com/uig)) {
+    videoPath = await downloadYoutube(inputUrlOrPath, outputDir);
+  } else if (fs.existsSync(inputUrlOrPath)) {
+    videoPath = path.resolve(inputUrlOrPath);
+  } else {
+    process.stderr.write(`Can't locate ${inputUrlOrPath}, skipping it.\n`);
+    return null;
+  }
 
   const audioPaths = await videoToAudio(videoPath, sampleRate, null, null, 1)
   const audioPath = audioPaths.filter(v => v.match(/\.raw$/ui))[0] || '/tmp/audio.raw'
@@ -340,7 +350,7 @@ const processFile = async (
 
   const m3u8FilePath = videoPath.replace(/([^\/\\]+)(\.[^.]*)$/ui, '$1/$1.m3u8');
   mkdirp(path.dirname(m3u8FilePath));
-  process.stderr.write(`${videoPath} + ${metadataPath} -[final output]-> ${m3u8FilePath}\n`)
+  process.stderr.write(`${path.relative(process.cwd(), videoPath)} + ${path.relative(process.cwd(), metadataPath)} -[final output]-> ${path.relative(process.cwd(), m3u8FilePath)}\n`)
   const times = vadDataToTimes(vadData, targetTimeSec);
   await produceSegments(videoPath, metadataPath, times, m3u8FilePath);
   process.stderr.write(`Done!\n`);
