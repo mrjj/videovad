@@ -1,0 +1,7 @@
+.idea
+.log
+data/!input.txt
+data/output
+contrib
+tmp
+node_modules
