@@ -42,11 +42,10 @@ USER node
 # Install application with dependencies
 RUN cd /home/node/  && \
     npm install && \
-    npm run build && \
     npm cache clean --force
 
 ENV NODE_ENV=production
 
 WORKDIR  /home/node/
 
-CMD ["node", "src/index.js", "$@"]
+CMD ["node", "src/index.js"]

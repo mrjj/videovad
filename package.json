@@ -1,6 +1,6 @@
 {
   "name": "videovad",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Mark-ups H.264 video with chapters based on Voice detection (Mozilla lib)",
   "author": {
     "email": "post.ilya@gmail.com",

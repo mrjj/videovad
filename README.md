@@ -19,12 +19,19 @@ $ npm start /local/folder/data/input.txt /local/folder/data/output
 ```
 
 ### Docker flow
+
+Run from repo root.
+
+Chowning to 1000:1000 is a most straightforward shortcut to avoid
+docker folder mounts permissions problems.
+
 ```
-$ npm run docker:build
-$ npm run docker:start -v /local/folder/data:/home/node/data
+$ docker build -t videovad:latest .
+$ mkdir -p ./data/output && chown 1000:1000 -R "./data"
+$ docker run -v "$(pwd)/data/:/home/node/data" videovad:latest
 ```
 
-(All paths in `input.txt` will be resolved according to docker file system that will not contain yout host files any magic way)
+(All paths in input.txt` will be resolved according to docker file system that will not contain yout host files any magic way)
 
 ## License note
 
